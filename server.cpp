@@ -62,12 +62,18 @@ sqlite3* openDB(char* path) {
 }
 
 void executeSQL(char* command, sqlite3 *db) {
+    printf("CHECKPOINT 1\n");
     char *zErrMsg = 0;
+    printf("CHECKPOINT 2\n");
     int rc = sqlite3_exec(db, command, callback, 0, &zErrMsg);
+    printf("CHECKPOINT 3\n");
    
     if( rc != SQLITE_OK ) {
+        printf("CHECKPOINT 4\n");
         printf("Oh shoot! There was an error while executing SQL - '%s'\n", zErrMsg);
+        printf("CHECKPOINT 5\n");
         sqlite3_free(zErrMsg);
+        printf("CHECKPOINT 6\n");
     }
 }
 
@@ -85,6 +91,9 @@ int main(int argc, char *argv[]) {
     int n;
     char* device_name = (char*) malloc(sizeof(char) * 64);
     char* device_ip = (char*) malloc(sizeof(char) * 64);
+
+    bzero(device_name, 64);
+    bzero(device_ip, 64);
 
     if(argc < 2) {
         error("No port specified.");
@@ -122,10 +131,10 @@ int main(int argc, char *argv[]) {
     db = openDB("tmp/local.db");
     executeSQL("CREATE TABLE IF NOT EXISTS `queue` (`id`	INTEGER PRIMARY KEY AUTOINCREMENT, `name`	TEXT, `ip`	TEXT, `command`	TEXT);", db);
     
-    char* sql = (char*) malloc(sizeof(char) * 255);
+    char sql[256];
 
-    strcpy(device_name, separate(argv[1], '/', 0));
-    strcpy(device_ip, separate(argv[1], '/', 1));
+    //strcpy(device_name, separate(argv[1], '/', 0));
+    //strcpy(device_ip, separate(argv[1], '/', 1));
 
     bzero(buffer, 256);
     n = read(newsockfd, buffer, 255);
@@ -134,16 +143,18 @@ int main(int argc, char *argv[]) {
         printf("%s", buffer);
         n = write(newsockfd, "RECV", 18);
 
+        bzero(sql, 256);
+
         strcpy(sql, "INSERT INTO `queue` (`name`, `ip`, `command`) VALUES ('");
-        strcat(sql, device_name);
+        strcat(sql, separate(argv[1], '/', 0));
         strcat(sql, "', '");
-        strcat(sql, device_ip);
+        strcat(sql, separate(argv[1], '/', 1));
         strcat(sql, "', '");
         strcat(sql, buffer);
         strcat(sql, "');");
 
         executeSQL(sql, db);
-
+       
         if (n < 0) {
             error("ERROR writing to socket");
             break;

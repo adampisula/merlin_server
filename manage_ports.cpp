@@ -94,10 +94,10 @@ int main(int argc, char *argv[]) {
         serv_addr.sin_addr.s_addr = INADDR_ANY;
         serv_addr.sin_port = htons(portno);
 
-        printf("%s\n", "Socket configured. Binding, gimme a minute... ");
+        printf("%s", "Socket configured. Binding, gimme a minute... ");
 
         if(bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-            printf("\nThere was an error while binding :(\n");
+            error("\nThere was an error while binding :(\n");
         }
 
         printf("%s\n", "Bounded ;) Listening...");
@@ -124,6 +124,9 @@ int main(int argc, char *argv[]) {
         char *device_ip = separate(buffer, '/', 1);
         char *device_role = separate(buffer, '/', 2);
 
+        printf("\tDevice: %s\n", buffer);
+        printf("\tRole: %s\n", device_role);
+
         char port_string[7];
 
         char command[256];
@@ -146,6 +149,8 @@ int main(int argc, char *argv[]) {
                 strcat(command, " ");
                 strcat(command, port_string);
                 strcat(command, " &");
+
+                printf("\tCommand: %s\n", command);
 
                 bzero(buffer, 256);
                 n = write(newsockfd, port_string, 18);
