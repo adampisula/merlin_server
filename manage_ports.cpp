@@ -38,7 +38,7 @@ bool port_available(int portno) {
     return available;
 }
 
-char *separate(char *str, char delimiter, int index) {
+char* separate(char *str, char delimiter, int index) {
     int word_size = 0;
     int delimiters_passed = 0;
 
@@ -59,9 +59,12 @@ char *separate(char *str, char delimiter, int index) {
     }
 
     char *ret = (char*) malloc(sizeof(char) * word_size);
+    bzero(ret, word_size);
 
-    for(int j = i - word_size; j < i; j++)
-        snprintf(ret + strlen(ret), sizeof(ret - strlen(ret)), "%c", str[j]);
+    for(int j = i - word_size; j < i; j++) {
+        if(!(str[j] == '/' && j == 0))
+            snprintf(ret + strlen(ret), sizeof(ret - strlen(ret)), "%c", str[j]);
+    }
 
     return ret;
 }
@@ -86,7 +89,7 @@ int main(int argc, char *argv[]) {
         printf("¡Caramba! We couldn't reuse the socket. That's a shame.\n");
 
     while(true) {
-        printf("%s\n", "Socket created. As it was supposed to.");
+        printf("%s\n", "Socket created. As it was planned.");
 
         bzero((char *) &serv_addr, sizeof(serv_addr));
 
@@ -100,7 +103,7 @@ int main(int argc, char *argv[]) {
             error("\nThere was an error while binding :(\n");
         }
 
-        printf("%s\n", "Bounded ;) Listening...");
+        printf("%s\n", "Bounded ;)\nListening...");
 
         listen(sockfd, 5);
 

@@ -37,7 +37,10 @@ char* separate(char *str, char delimiter, int index) {
         word_size++;
     }
 
+    word_size++;
+
     char *ret = (char*) malloc(sizeof(char) * word_size);
+    bzero(ret, word_size);
 
     for(int j = i - word_size; j < i; j++)
         snprintf(ret + strlen(ret), sizeof(ret - strlen(ret)), "%c", str[j]);
