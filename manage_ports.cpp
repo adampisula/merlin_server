@@ -71,7 +71,8 @@ char* separate(char *str, char delimiter, int index) {
 
 int main(int argc, char *argv[]) {
     //PROGRAM
-    int sockfd, newsockfd, portno = 51717;
+    int sockfd, newsockfd;
+    int portno = 51717, ports_to_connect = 16;
     struct sockaddr_in serv_addr, cli_addr;
     int devices_limit = 128;
     socklen_t clilen;
@@ -79,28 +80,32 @@ int main(int argc, char *argv[]) {
     int n;
     int bind_result;
 
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
-    if (sockfd < 0)
-        printf("Ouch! We've had a trouble opening the socket.\n");
-
-    int enable = 1;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
-        printf("¡Caramba! We couldn't reuse the socket. That's a shame.\n");
-
     while(true) {
+    	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+	    if (sockfd < 0)
+            printf("Ouch! We've had a trouble opening the socket.\n");
+
+        int enable = 1;
+        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+            printf("¡Caramba! We couldn't reuse the socket. That's a shame.\n");
+
         printf("%s\n", "Socket created. As it was planned.");
 
         bzero((char *) &serv_addr, sizeof(serv_addr));
 
         serv_addr.sin_family = AF_INET;
         serv_addr.sin_addr.s_addr = INADDR_ANY;
-        serv_addr.sin_port = htons(portno);
+        
+        printf("%s\n", "Socket configured.");
 
-        printf("%s", "Socket configured. Binding, gimme a minute... ");
+        for(int i = portno; i < portno + ports_to_connect; i++) {
+            serv_addr.sin_port = htons(i);
 
-        if(bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-            error("\nThere was an error while binding :(\n");
+            printf("Binding on %i... ", i);
+
+            if(bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) >= 0)
+                continue;
         }
 
         printf("%s\n", "Bounded ;)\nListening...");
@@ -144,7 +149,7 @@ int main(int argc, char *argv[]) {
             strcat(command, buffer);
         }
 
-        for(int i = portno + 1; i < portno + devices_limit + 1; i++) {
+        for(int i = portno + ports_to_connect + 1; i < portno + ports_to_connect + devices_limit + 1; i++) {
             if(port_available(i)) {
                 snprintf(port_string, 7, "%d", i);
 
@@ -167,11 +172,11 @@ int main(int argc, char *argv[]) {
             }
         }
 
+        close(sockfd);
+        close(newsockfd);
         printf("%s\n", "-----");
+	usleep(750 * 1000);
     }
-
-    close(sockfd);
-    close(newsockfd);
 
     return 0;
 }
