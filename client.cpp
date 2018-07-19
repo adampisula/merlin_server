@@ -6,6 +6,68 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <sqlite3.h> 
+
+static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
+   int i;
+   for(i = 0; i<argc; i++) {
+      printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+   }
+   printf("\n");
+   return 0;
+}
+
+char* separate(char *str, char delimiter, int index) {
+    int word_size = 0;
+    int delimiters_passed = 0;
+
+    int i;
+
+    for(i = 0; i < strlen(str); i++) {
+        if(str[i] == delimiter) {
+            delimiters_passed++;
+
+            if(index == delimiters_passed - 1)
+                break;
+
+            else
+                word_size = -1;
+        }
+
+        word_size++;
+    }
+
+    char *ret = (char*) malloc(sizeof(char) * word_size);
+
+    for(int j = i - word_size; j < i; j++)
+        snprintf(ret + strlen(ret), sizeof(ret - strlen(ret)), "%c", str[j]);
+
+    return ret;
+}
+
+sqlite3* openDB(char* path) {
+    sqlite3* retdb;
+    int rc;
+    
+    rc = sqlite3_open(path, &retdb);
+
+    if(rc) {
+        printf("Dang it! There was a problem with database - '%s\n'", sqlite3_errmsg(retdb));
+        return(0);
+    }
+
+    return retdb;
+}
+
+void executeSQL(char* command, sqlite3 *db) {
+    char *zErrMsg = 0;
+    int rc = sqlite3_exec(db, command, callback, 0, &zErrMsg);
+   
+    if( rc != SQLITE_OK ) {
+        printf("Oh shoot! There was an error while executing SQL - '%s'\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    }
+}
 
 void error(const char *msg) {
     perror(msg);
@@ -28,7 +90,7 @@ int main(int argc, char *argv[]) {
     if (sockfd < 0)
         error("ERROR opening socket");
 
-    server = gethostbyname(argv[1]);
+    server = gethostbyname(separate(argv[1], '/', 0));
 
     if (server == NULL) {
         fprintf(stderr,"ERROR, no such host\n");

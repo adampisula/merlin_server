@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     //PROGRAM
     int sockfd, newsockfd, portno = 51717;
     struct sockaddr_in serv_addr, cli_addr;
-    int devices_limit = 32;
+    int devices_limit = 128;
     socklen_t clilen;
     char buffer[256];
     int n;
@@ -120,20 +120,22 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        char *device_role = separate(buffer, '/', 0);
-        char *device_hostname = separate(buffer, '/', 1);
-        char *device_ip = separate(buffer, '/', 2);
+        char *device_hostname = separate(buffer, '/', 0);
+        char *device_ip = separate(buffer, '/', 1);
+        char *device_role = separate(buffer, '/', 2);
 
         char port_string[7];
 
         char command[256];
 
-        if(strcmp(device_role, "CLIENT") == 0)
-            strcpy(command, "xterm -e ~/Documents/Projects/merlin_magic/brain/server");
+        if(strcmp(device_role, "CLIENT") == 0) {
+            strcpy(command, "./server ");
+            strcat(command, buffer);
+        }
 
         else if(strcmp(device_role, "SERVER") == 0) {
-            strcpy(command, "xterm -e ~/Documents/Projects/merlin_magic/brain/client ");
-            strcat(command, device_hostname);
+            strcpy(command, "./client ");
+            strcat(command, buffer);
         }
 
         for(int i = portno + 1; i < portno + devices_limit + 1; i++) {
