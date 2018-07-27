@@ -101,8 +101,8 @@ static int answer_to_connection (void *cls, struct MHD_Connection *connection, c
     char* clientCmd = (char*) malloc(sizeof(char) * 256);
     char* serverCmd = (char*) malloc(sizeof(char) * 256);
 
-    sprintf(clientCmd, "xfce4-terminal -e \"/root/Documents/Projects/merlin_server/runclient.sh %s/%s/%s %s\"", name, name, ip, role);
-    sprintf(serverCmd, "xfce4-terminal -e \"/root/Documents/Projects/merlin_server/runserver.sh %s/%s/%s %s\"", name, ip, role, port_string);
+    sprintf(clientCmd, "/root/Documents/Projects/merlin_server/client %s/%s/%s %s &", name, ip, role, port_string);
+    sprintf(serverCmd, "/root/Documents/Projects/merlin_server/server %s/%s/%s %s &", name, ip, role, port_string);
 
     if(strcmp(role, "CLIENT") == 0) {
         popen(serverCmd, "r");

@@ -7,6 +7,9 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <sqlite3.h> 
+#include <thread>
+
+int n = 1;
 
 void error(const char *msg) {
     perror(msg);
@@ -80,7 +83,25 @@ void executeSQL(char* command, sqlite3 *db) {
     }
 }
 
+void send(int sockfd, char* msg) {
+    n = write(sockfd, msg, strlen(msg));
+
+    if (n < 0)
+        error("We couldn't write to socket :c\n");
+
+    char buffer[256];
+
+    bzero(buffer, 256);
+    n = read(sockfd, buffer, 255);
+
+    if (n < 0)
+        error("We couldn't read from socket :c\n");
+
+    printf("\t%s\n", buffer);
+}
+
 int main(int argc, char *argv[]) {
+    sqlite3* db;
     int sockfd, portno = atoi(argv[2]), n;
     struct sockaddr_in serv_addr;
     struct hostent *server;
@@ -113,22 +134,15 @@ int main(int argc, char *argv[]) {
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
         error("Dang it, there was a trouble while connecting with specified address.\n");
 
+    db = openDB("tmp/local.db");
+    char query[256];
+
     while(n > 0) {
-        bzero(buffer, 256);
-        fgets(buffer, 255, stdin);
+        //We need to implement sending data to device server
+        bzero(query, 256);
+        sprintf(query, "SELECT `command` FROM `queue` WHERE `name`=`%s`;", separate(argv[1], '/', 0));
 
-        n = write(sockfd,buffer,strlen(buffer));
-
-        if (n < 0)
-            error("We couldn't write to socket :c\n");
-
-        bzero(buffer, 256);
-        n = read(sockfd, buffer, 255);
-
-        if (n < 0)
-            error("We couldn't read from socket :c\n");
-
-        printf("\t%s\n", buffer);
+        executeSQL(query, db);
     }
 
     close(sockfd);
