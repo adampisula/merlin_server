@@ -7,6 +7,11 @@
 #include <netinet/in.h>
 #include <sqlite3.h>
 
+void error(const char *msg) {
+    perror(msg);
+    exit(1);
+}
+
 static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
    int i;
 
@@ -53,12 +58,13 @@ char* separate(char *str, char delimiter, int index) {
 sqlite3* openDB(char* path) {
     sqlite3* retdb;
     int rc;
+    char * errmsg = (char*) malloc(sizeof(char) * 512);
     
     rc = sqlite3_open(path, &retdb);
 
     if(rc) {
-        printf("Dang it! There was a problem with database - '%s\n'", sqlite3_errmsg(retdb));
-        return(0);
+        sprintf(errmsg, "Dang it! There was a problem with database - '%s'\n", sqlite3_errmsg(retdb));
+        error(errmsg);
     }
 
     return retdb;
@@ -67,16 +73,13 @@ sqlite3* openDB(char* path) {
 void executeSQL(char* command, sqlite3 *db) {
     char *zErrMsg = 0;
     int rc = sqlite3_exec(db, command, callback, 0, &zErrMsg);
+    char *errmsg = (char*) malloc(sizeof(char) * 512);
    
     if( rc != SQLITE_OK ) {
-        printf("Oh shoot! There was an error while executing SQL - '%s'\n", zErrMsg);
+        sprintf(errmsg, "Dang it! There was a problem with database - '%s'\n", zErrMsg);
         sqlite3_free(zErrMsg);
+        error(errmsg);
     }
-}
-
-void error(const char *msg) {
-    perror(msg);
-    exit(1);
 }
 
 int main(int argc, char *argv[]) {
@@ -93,19 +96,18 @@ int main(int argc, char *argv[]) {
     bzero(device_ip, 64);
 
     if(argc < 2) {
-        error("No port specified.");
+        error("You didn't specify any port, man.\n");
     }
 
     if(argc < 3) {
-        error("No device specified.");
+        error("You didn't specify any device :(\n");
     }
 
     portno = atoi(argv[2]);
-
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (sockfd < 0)
-        error("ERROR opening socket");
+        error("We couldn't open that socket :/\n");
 
     bzero((char *) &serv_addr, sizeof(serv_addr));
 
@@ -114,7 +116,7 @@ int main(int argc, char *argv[]) {
     serv_addr.sin_port = htons(portno);
 
     if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
-        error("ERROR on binding");
+        error("There was an error while binding :c\n");
 
     listen(sockfd, 5);
 
@@ -122,7 +124,7 @@ int main(int argc, char *argv[]) {
     newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 
     if (newsockfd < 0)
-        error("ERROR on accept");
+        error("Other side of the connection didn't accept your request :o\n");
 
 
     db = openDB("tmp/local.db");
@@ -152,17 +154,15 @@ int main(int argc, char *argv[]) {
 
         executeSQL(sql, db);
        
-        if (n < 0) {
-            error("ERROR writing to socket");
-            break;
-        }
+        if (n < 0)
+            error("We couldn't write to socket :(\n");
 
         bzero(buffer, 256);
         n = read(newsockfd, buffer, 255);
     }
 
     if (n < 0)
-        error("ERROR reading from socket");
+        error("We couldn't read from socket :(\n");
 
     close(newsockfd);
     close(sockfd);

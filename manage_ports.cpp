@@ -39,7 +39,7 @@ bool port_available(int portno) {
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (sockfd < 0)
-        printf("Ouch! We've had a trouble opening the socket.\n");
+        error("Ouch! We've had a trouble opening the socket.\n");
 
     bzero((char *) &serv_addr, sizeof(serv_addr));
 
@@ -100,19 +100,19 @@ static int answer_to_connection (void *cls, struct MHD_Connection *connection, c
     //OPEN EITHER CLIENT OR SERVER
     char* clientCmd = (char*) malloc(sizeof(char) * 256);
     char* serverCmd = (char*) malloc(sizeof(char) * 256);
-    
-    printf("OPEN\n");
 
     sprintf(clientCmd, "xfce4-terminal -e \"/root/Documents/Projects/merlin_server/runclient.sh %s/%s/%s %s\"", name, name, ip, role);
     sprintf(serverCmd, "xfce4-terminal -e \"/root/Documents/Projects/merlin_server/runserver.sh %s/%s/%s %s\"", name, ip, role, port_string);
 
-    if(strcmp(role, "CLIENT") == 0)
+    if(strcmp(role, "CLIENT") == 0) {
         popen(serverCmd, "r");
+        printf("Opened server on port %s.\n", port_string);
+    }
 
-    else if(strcmp(role, "SERVER") == 0)
+    else if(strcmp(role, "SERVER") == 0) {
         popen(clientCmd, "r");
-
-    printf("OPENED EXTERNAL PROGRAM\n");
+        printf("Opened client on port %s.\n", port_string);
+    }
 
     struct MHD_Response *response;
     int ret;
@@ -164,54 +164,11 @@ int main(int argc, char *argv[]) {
     if(daemon == NULL)
         error("Web server doesn't seem to work :(");
 
-   /*     
+    char command[256];
+    bzero(command, 256);
 
-        char port_string[7];
-
-        char command[256];
-
-        if(strcmp(device_role, "CLIENT") == 0) {
-            strcpy(command, "./server ");
-            strcat(command, buffer);
-        }
-
-        else if(strcmp(device_role, "SERVER") == 0) {
-            strcpy(command, "./client ");
-            strcat(command, buffer);
-        }
-
-        for(int i = portno + ports_to_connect + 1; i < portno + ports_to_connect + devices_limit + 1; i++) {
-            if(port_available(i)) {
-                snprintf(port_string, 7, "%d", i);
-
-                printf("Port: %s\n", port_string);
-                strcat(command, " ");
-                strcat(command, port_string);
-                strcat(command, " &");
-
-                printf("\tCommand: %s\n", command);
-
-                bzero(buffer, 256);
-                n = write(newsockfd, port_string, 18);
-
-                if (n < 0)
-                    printf("¡Dios mío! We weren't able to write to socket :(\n");
-
-                popen(command, "r");
-
-                break;
-            }
-        }
-
-        close(sockfd);
-        close(newsockfd);
-        printf("%s\n", "-----");
-	usleep(750 * 1000);
-    }*/
-
-    getchar();
-
-    
+    while(strcmp(command, "exit") != 0)
+        scanf("%s", command);
 
     return 0;
 }
